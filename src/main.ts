@@ -20,7 +20,7 @@ const mainProcess = async (
 
     if (code != "200") {
       errorURLS.push([code, url]);
-      writeFileSync("result" + fileName, `${code} : ${url}\n`);
+      appendFileSync("result" + fileName, `${code} : ${url}\n`);
     }
     appendFileSync(fileName, `${code} : ${url}\n`);
   });
