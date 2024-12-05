@@ -2,7 +2,8 @@ import { HTTPResponse, Page } from "puppeteer";
 import { openBrowser, openPage, search } from "../services/puppeteer";
 
 const formatLink = (base: string, currentUrl: string, url: string) => {
-  const u = url.trim();
+  let u = url.trim();
+  if (!u.endsWith("/")) u = u + "/";
   if (url.startsWith("https://")) return u;
   if (url.startsWith("http://")) return u;
   if (url.startsWith("//")) return "https:" + u;
@@ -25,7 +26,7 @@ export const crawler = async (
   let pastLinks = [] as string[];
   const [browser, page] = await openBrowser(isMobile, false);
   while (nextLinks.length > 0) {
-    const link = nextLinks[0].trim();
+    const link = formatLink(site, nextLinks[0].trim(), nextLinks[0].trim());
 
     let err: any = undefined;
     const response = await openPage(page, link).catch((e) => (err = e));
