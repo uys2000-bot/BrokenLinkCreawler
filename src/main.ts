@@ -8,9 +8,9 @@ const mainProcess = async (
   isMobile: boolean,
   fileName: string
 ) => {
-  const errorURLS = [] as Array<[number | string | undefined, string]>;
-  await crawler(url, isMobile, async (page, response, err) => {
-    const url = page.url();
+  writeFileSync("res_err_" + fileName, "");
+  writeFileSync("res_all_" + fileName, "");
+  await crawler(url, isMobile, async (link, page, response, err) => {
     const statusCode = response?.status ? response.status() : undefined;
     let code: string;
 
@@ -18,13 +18,14 @@ const mainProcess = async (
     else if (statusCode != undefined) code = statusCode.toString();
     else code = "nul";
 
+    const currentUrl = page.url();
     if (code != "200") {
-      errorURLS.push([code, url]);
-      appendFileSync("result" + fileName, `${code} : ${url}\n`);
+      const f = "res_err_" + fileName;
+      appendFileSync(f, `${code} : ${link} ==> ${currentUrl}\n`);
     }
-    appendFileSync(fileName, `${code} : ${url}\n`);
+    const f = "res_all_" + fileName;
+    appendFileSync(f, `${code} : ${link} ==> ${currentUrl}\n`);
   });
-  return errorURLS;
 };
 
 (async () => {
@@ -38,9 +39,7 @@ const mainProcess = async (
     if (url == undefined || isMobile == undefined || fileName == undefined)
       return console.log(message);
     else {
-      writeFileSync(fileName, "");
-      writeFileSync("result" + fileName, "");
-      const errorUrls = await mainProcess(url, isMobile, fileName);
+      await mainProcess(url, isMobile, fileName);
     }
   }
 })();

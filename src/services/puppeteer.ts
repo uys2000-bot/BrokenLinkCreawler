@@ -1,28 +1,35 @@
-import puppeteer, { Browser, KnownDevices, Page } from "puppeteer";
+import puppeteer, {
+  Browser,
+  KnownDevices,
+  LaunchOptions,
+  Page,
+} from "puppeteer";
 import { matchAll } from "./regex";
 const iPhone = KnownDevices["iPhone 13"];
 
-// Or import puppeteer from 'puppeteer-core';
-export const runInBrowser = async (
-  callback: (bBrowser: Browser, page: Page) => Promise<void>,
-  isMobile = false,
+const getLaunchOptions = (
   showBrowser = false,
-  closeAfter = true
-) => {
-  const browser = await puppeteer.launch({
+  isMobile = false
+): LaunchOptions => {
+  return {
     headless: !showBrowser,
     defaultViewport: {
       width: isMobile ? 412 : 869,
       height: isMobile ? 412 : 1024,
       isMobile: isMobile,
     },
-  });
+  };
+};
+
+export const openBrowser = async (isMobile = false, showBrowser = false) => {
+  const options = getLaunchOptions(showBrowser, isMobile);
+  const browser = await puppeteer.launch(options);
 
   const pages = await browser.pages();
   const page = pages[0] ? pages[0] : await browser.newPage();
+
   if (isMobile) await page.emulate(iPhone);
-  await callback(browser, page);
-  if (closeAfter) browser.close();
+  return [browser, page] as [Browser, Page];
 };
 
 export const openPage = async (page: Page, url: string) => {

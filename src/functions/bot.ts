@@ -1,61 +1,53 @@
 import { HTTPResponse, Page } from "puppeteer";
-import { openPage, runInBrowser, search } from "../services/puppeteer";
-import { filterBatcher, mapBatcher } from "../services/batcher";
+import { openBrowser, openPage, search } from "../services/puppeteer";
 
-const linkFormatter = (base: string, currentUrl: string, url: string) => {
-  if (url.startsWith("https://")) return url;
-  if (url.startsWith("http://")) return url;
-  if (url.startsWith("//")) return "https://" + url;
-  if (url.startsWith("/")) return base + url;
+const formatLink = (base: string, currentUrl: string, url: string) => {
+  const u = url.trim();
+  if (url.startsWith("https://")) return u;
+  if (url.startsWith("http://")) return u;
+  if (url.startsWith("//")) return "https:" + u;
+  if (url.startsWith("/")) return base + u;
   return "";
 };
-const filterLinks = async (
-  newLinks: string[],
-  usedLinks: string[],
-  unusedLinks: string[]
-) => {
-  const links = await filterBatcher(newLinks, (item, i) =>
-    usedLinks.includes(item) || unusedLinks.includes(item) ? undefined : item
-  );
-  return [...new Set(links)];
-};
+
 export const crawler = async (
   site: string,
-  isMobile = false,
-  runOnPage = async (page: Page, response: HTTPResponse | null, err: any) => {}
+  isMobile: boolean,
+  runOnPage: (
+    link: string,
+    page: Page,
+    response: HTTPResponse | null,
+    err: any
+  ) => Promise<void>
 ) => {
   const regex = /(?:['"])(https:\/\/|http:\/\/|\/)([^'"]+)(?:['"])/g;
-  const unusedlinks = [site] as string[];
-  const usedLinks = [] as string[];
-  await runInBrowser(
-    async (browser, page) => {
-      while (unusedlinks.length > 0) {
-        const currentUrl = unusedlinks[0];
-        unusedlinks.shift();
-        usedLinks.push(currentUrl);
+  let nextLinks = [site] as string[];
+  let pastLinks = [] as string[];
+  const [browser, page] = await openBrowser(isMobile, false);
+  while (nextLinks.length > 0) {
+    const link = nextLinks[0].trim();
 
-        let err = undefined as any;
-        const response = await openPage(page, currentUrl).catch(
-          (e) => (err = e)
-        );
+    let err: any = undefined;
+    const response = await openPage(page, link).catch((e) => (err = e));
+    await runOnPage(link, page, response, err);
 
-        if (currentUrl.startsWith(site)) {
-          const links = await search(page, regex);
-          const formattedLinks = await mapBatcher(links, (item, i) =>
-            linkFormatter(site, currentUrl, item)
-          );
-          const filteredLinks = await filterLinks(
-            formattedLinks,
-            usedLinks,
-            unusedlinks
-          );
-          filteredLinks.map((item) => unusedlinks.push(item));
-        }
-        await runOnPage(page, response, err);
+    nextLinks.shift();
+    pastLinks.push(link);
+
+    const newLinks = [...new Set(await search(page, regex))];
+    for (let index = 0; index < newLinks.length; index++) {
+      const newLink = formatLink(site, link, newLinks[index]).trim();
+      if (
+        newLink &&
+        newLink.length > 0 &&
+        newLink != link &&
+        !pastLinks.includes(newLink) &&
+        !nextLinks.includes(newLink)
+      ) {
+        nextLinks.push(newLink);
       }
-    },
-    isMobile,
-    false,
-    true
-  );
+    }
+  }
+  browser.close();
+  process.exit();
 };
