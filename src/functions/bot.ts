@@ -3,7 +3,7 @@ import { openBrowser, openPage, search } from "../services/puppeteer";
 
 const formatLink = (base: string, currentUrl: string, url: string) => {
   let u = url.trim();
-  if (!u.endsWith("/")) u = u + "/";
+  if (u.endsWith("/")) u.slice(u.length - 1, u.length);
   if (url.startsWith("https://")) return u;
   if (url.startsWith("http://")) return u;
   if (url.startsWith("//")) return "https:" + u;
