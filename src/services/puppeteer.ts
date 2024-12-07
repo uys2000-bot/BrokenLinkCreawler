@@ -18,11 +18,19 @@ const getLaunchOptions = (
       height: isMobile ? 412 : 1024,
       isMobile: isMobile,
     },
+    args: [
+      "--disable-gpu",
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--no-zygote",
+    ],
   };
 };
 
 export const openBrowser = async (isMobile = false, showBrowser = false) => {
   const options = getLaunchOptions(showBrowser, isMobile);
+  if (process.env.RASP === "true")
+    options["executablePath"] = "/usr/bin/chromium-browser";
   const browser = await puppeteer.launch(options);
 
   const pages = await browser.pages();
@@ -33,7 +41,7 @@ export const openBrowser = async (isMobile = false, showBrowser = false) => {
 };
 
 export const openPage = async (page: Page, url: string) => {
-  return await page.goto(url, { waitUntil: "domcontentloaded" });
+  return await page.goto(url, { waitUntil: "load" });
 };
 
 export const search = async (page: Page, regex: RegExp) => {

@@ -8,9 +8,9 @@ const mainProcess = async (
   isMobile: boolean,
   fileName: string
 ) => {
-  writeFileSync("res_err_" + fileName + ".csv", "code,link,redirected\n");
-  writeFileSync("res_all_" + fileName + ".csv", "code,link,redirected\n");
-  await crawler(url, isMobile, async (link, page, response, err) => {
+  writeFileSync("res_err_" + fileName + ".csv", "code,link,redirected,page\n");
+  writeFileSync("res_all_" + fileName + ".csv", "code,link,redirected,page\n");
+  await crawler(url, isMobile, async (links, page, response, err) => {
     const statusCode = response?.status ? response.status() : undefined;
     let code: string;
 
@@ -21,10 +21,10 @@ const mainProcess = async (
     const currentUrl = page.url();
     if (code != "200") {
       const f = "res_err_" + fileName + ".csv";
-      appendFileSync(f, `${code},${link},${currentUrl}\n`);
+      appendFileSync(f, `${code},${links[0]},${currentUrl},${links[1]}\n`);
     }
     const f = "res_all_" + fileName + ".csv";
-    appendFileSync(f, `${code},${link},${currentUrl}\n`);
+    appendFileSync(f, `${code},${links[0]},${currentUrl},${links[1]}\n`);
   });
 };
 
