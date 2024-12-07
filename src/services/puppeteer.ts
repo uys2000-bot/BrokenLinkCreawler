@@ -41,7 +41,7 @@ export const openBrowser = async (isMobile = false, showBrowser = false) => {
 };
 
 export const openPage = async (page: Page, url: string) => {
-  return await page.goto(url, { waitUntil: "load" });
+  return await page.goto(url, { waitUntil: "domcontentloaded" });
 };
 
 export const search = async (page: Page, regex: RegExp) => {
